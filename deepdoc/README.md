@@ -1,18 +1,18 @@
-English | [简体中文](./README_zh.md)
+[English](./README.md) | 简体中文
 
 # *Deep*Doc
 
-- [1. Introduction](#1)
-- [2. Vision](#2)
-- [3. Parser](#3)
+- [*Deep*Doc](#deepdoc)
+  - [1. 介绍](#1-介绍)
+  - [2. 视觉处理](#2-视觉处理)
+  - [3. 解析器](#3-解析器)
+    - [简历](#简历)
 
 <a name="1"></a>
-## 1. Introduction
+## 1. 介绍
 
-With a bunch of documents from various domains with various formats and along with diverse retrieval requirements, 
-an accurate analysis becomes a very challenge task. *Deep*Doc is born for that purpose.
-There are 2 parts in *Deep*Doc so far: vision and parser. 
-You can run the flowing test programs if you're interested in our results of OCR, layout recognition and TSR.
+对于来自不同领域、具有不同格式和不同检索要求的大量文档，准确的分析成为一项极具挑战性的任务。*Deep*Doc 就是为了这个目的而诞生的。到目前为止，*Deep*Doc 中有两个组成部分：视觉处理和解析器。如果您对我们的OCR、布局识别和TSR结果感兴趣，您可以运行下面的测试程序。
+
 ```bash
 python deepdoc/vision/t_ocr.py -h
 usage: t_ocr.py [-h] --inputs INPUTS [--output_dir OUTPUT_DIR]
@@ -23,6 +23,7 @@ options:
   --output_dir OUTPUT_DIR
                         Directory where to store the output images. Default: './ocr_outputs'
 ```
+
 ```bash
 python deepdoc/vision/t_recognizer.py -h
 usage: t_recognizer.py [-h] --inputs INPUTS [--output_dir OUTPUT_DIR] [--threshold THRESHOLD] [--mode {layout,tsr}]
@@ -37,86 +38,79 @@ options:
   --mode {layout,tsr}   Task mode: layout recognition or table structure recognition
 ```
 
-Our models are served on HuggingFace. If you have trouble downloading HuggingFace models, this might help!!
+HuggingFace为我们的模型提供服务。如果你在下载HuggingFace模型时遇到问题，这可能会有所帮助！！
+
 ```bash
 export HF_ENDPOINT=https://hf-mirror.com
 ```
 
 <a name="2"></a>
-## 2. Vision
+## 2. 视觉处理
 
-We use vision information to resolve problems as human being.
-  - OCR. Since a lot of documents presented as images or at least be able to transform to image, 
-    OCR is a very essential and fundamental or even universal solution for text extraction.
+作为人类，我们使用视觉信息来解决问题。
+
+  - **OCR（Optical Character Recognition，光学字符识别）**。由于许多文档都是以图像形式呈现的，或者至少能够转换为图像，因此OCR是文本提取的一个非常重要、基本，甚至通用的解决方案。
+
     ```bash
-        python deepdoc/vision/t_ocr.py --inputs=path_to_images_or_pdfs --output_dir=path_to_store_result
-     ```
-    The inputs could be directory to images or PDF, or a image or PDF. 
-    You can look into the folder 'path_to_store_result' where has images which demonstrate the positions of results,
-    txt files which contain the OCR text.
+    python deepdoc/vision/t_ocr.py --inputs=path_to_images_or_pdfs --output_dir=path_to_store_result
+    ```
+
+    输入可以是图像或PDF的目录，或者单个图像、PDF文件。您可以查看文件夹 `path_to_store_result` ，其中有演示结果位置的图像，以及包含OCR文本的txt文件。
+    
     <div align="center" style="margin-top:20px;margin-bottom:20px;">
     <img src="https://github.com/infiniflow/ragflow/assets/12318111/f25bee3d-aaf7-4102-baf5-d5208361d110" width="900"/>
     </div>
 
-  - Layout recognition. Documents from different domain may have various layouts, 
-    like, newspaper, magazine, book and résumé are distinct in terms of layout. 
-    Only when machine have an accurate layout analysis, it can decide if these text parts are successive or not, 
-    or this part needs Table Structure Recognition(TSR) to process, or this part is a figure and described with this caption.
-    We have 10 basic layout components which covers most cases:
-      - Text
-      - Title
-      - Figure
-      - Figure caption
-      - Table
-      - Table caption
-      - Header
-      - Footer
-      - Reference
-      - Equation
+  - 布局识别（Layout recognition）。来自不同领域的文件可能有不同的布局，如报纸、杂志、书籍和简历在布局方面是不同的。只有当机器有准确的布局分析时，它才能决定这些文本部分是连续的还是不连续的，或者这个部分需要表结构识别（Table Structure Recognition，TSR）来处理，或者这个部件是一个图形并用这个标题来描述。我们有10个基本布局组件，涵盖了大多数情况：
+      - 文本
+      - 标题
+      - 配图
+      - 配图标题
+      - 表格
+      - 表格标题
+      - 页头
+      - 页尾
+      - 参考引用
+      - 公式
       
-     Have a try on the following command to see the layout detection results.
-     ```bash
-        python deepdoc/vision/t_recognizer.py --inputs=path_to_images_or_pdfs --threshold=0.2 --mode=layout --output_dir=path_to_store_result
-     ```
-    The inputs could be directory to images or PDF, or a image or PDF. 
-    You can look into the folder 'path_to_store_result' where has images which demonstrate the detection results as following:
+     请尝试以下命令以查看布局检测结果。
+
+    ```bash
+    python deepdoc/vision/t_recognizer.py --inputs=path_to_images_or_pdfs --threshold=0.2 --mode=layout --output_dir=path_to_store_result
+    ```
+
+    输入可以是图像或PDF的目录，或者单个图像、PDF文件。您可以查看文件夹 `path_to_store_result` ，其中有显示检测结果的图像，如下所示：
     <div align="center" style="margin-top:20px;margin-bottom:20px;">
     <img src="https://github.com/infiniflow/ragflow/assets/12318111/07e0f625-9b28-43d0-9fbb-5bf586cd286f" width="1000"/>
     </div>
   
-  - Table Structure Recognition(TSR). Data table is a frequently used structure to present data including numbers or text.
-    And the structure of a table might be very complex, like hierarchy headers, spanning cells and projected row headers.
-    Along with TSR, we also reassemble the content into sentences which could be well comprehended by LLM. 
-    We have five labels for TSR task:
-      - Column
-      - Row
-      - Column header
-      - Projected row header
-      - Spanning cell
+  - **TSR（Table Structure Recognition，表结构识别）**。数据表是一种常用的结构，用于表示包括数字或文本在内的数据。表的结构可能非常复杂，比如层次结构标题、跨单元格和投影行标题。除了TSR，我们还将内容重新组合成LLM可以很好理解的句子。TSR任务有五个标签：
+      - 列
+      - 行
+      - 列标题
+      - 行标题
+      - 合并单元格
       
-    Have a try on the following command to see the layout detection results.
-     ```bash
-        python deepdoc/vision/t_recognizer.py --inputs=path_to_images_or_pdfs --threshold=0.2 --mode=tsr --output_dir=path_to_store_result
-     ```
-    The inputs could be directory to images or PDF, or a image or PDF. 
-    You can look into the folder 'path_to_store_result' where has both images and html pages which demonstrate the detection results as following:
+    请尝试以下命令以查看布局检测结果。
+
+    ```bash
+    python deepdoc/vision/t_recognizer.py --inputs=path_to_images_or_pdfs --threshold=0.2 --mode=tsr --output_dir=path_to_store_result
+    ```
+
+    输入可以是图像或PDF的目录，或者单个图像、PDF文件。您可以查看文件夹 `path_to_store_result` ，其中包含图像和html页面，这些页面展示了以下检测结果：
+
     <div align="center" style="margin-top:20px;margin-bottom:20px;">
     <img src="https://github.com/infiniflow/ragflow/assets/12318111/cb24e81b-f2ba-49f3-ac09-883d75606f4c" width="1000"/>
     </div>
         
 <a name="3"></a>
-## 3. Parser
+## 3. 解析器
 
-Four kinds of document formats as PDF, DOCX, EXCEL and PPT have their corresponding parser. 
-The most complex one is PDF parser since PDF's flexibility. The output of PDF parser includes:
-  - Text chunks with their own positions in PDF(page number and rectangular positions).
-  - Tables with cropped image from the PDF, and contents which has already translated into natural language sentences.
-  - Figures with caption and text in the figures.
+PDF、DOCX、EXCEL和PPT四种文档格式都有相应的解析器。最复杂的是PDF解析器，因为PDF具有灵活性。PDF解析器的输出包括：
+  - 在PDF中有自己位置的文本块（页码和矩形位置）。
+  - 带有PDF裁剪图像的表格，以及已经翻译成自然语言句子的内容。
+  - 图中带标题和文字的图。
   
-### Résumé
+### 简历
 
-The résumé is a very complicated kind of document. A résumé which is composed of unstructured text 
-with various layouts could be resolved into structured data composed of nearly a hundred of fields.
-We haven't opened the parser yet, as we open the processing method after parsing procedure.
-
-    
+简历是一种非常复杂的文档。由各种格式的非结构化文本构成的简历可以被解析为包含近百个字段的结构化数据。我们还没有启用解析器，因为在解析过程之后才会启动处理方法。

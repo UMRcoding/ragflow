@@ -1,18 +1,3 @@
-#
-#  Copyright 2024 The InfiniFlow Authors. All Rights Reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-#
 import json
 import logging
 import re
@@ -46,78 +31,52 @@ from api.utils.api_utils import (
     validate_request,
 )
 
-
 @manager.route("/login", methods=["POST", "GET"])  # noqa: F821
 def login():
-    """
-    User login endpoint.
-    ---
-    tags:
-      - User
-    parameters:
-      - in: body
-        name: body
-        description: Login credentials.
-        required: true
-        schema:
-          type: object
-          properties:
-            email:
-              type: string
-              description: User email.
-            password:
-              type: string
-              description: User password.
-    responses:
-      200:
-        description: Login successful.
-        schema:
-          type: object
-      401:
-        description: Authentication failed.
-        schema:
-          type: object
-    """
     if not request.json:
-        return get_json_result(data=False, code=settings.RetCode.AUTHENTICATION_ERROR, message="Unauthorized!")
+        return get_json_result(data=False, code=settings.RetCode.AUTHENTICATION_ERROR, message="未授权访问!")
 
     email = request.json.get("email", "")
     users = UserService.query(email=email)
+    # 未注册用户返回错误
     if not users:
         return get_json_result(
             data=False,
             code=settings.RetCode.AUTHENTICATION_ERROR,
-            message=f"Email: {email} is not registered!",
+            message=f"邮箱 {email} 未注册！",
         )
 
+    # 解密密码字段
     password = request.json.get("password")
     try:
         password = decrypt(password)
     except BaseException:
-        return get_json_result(data=False, code=settings.RetCode.SERVER_ERROR, message="Fail to crypt password")
+        return get_json_result(data=False, code=settings.RetCode.SERVER_ERROR, message="密码解密失败")
 
+    # 校验邮箱 + 密码
     user = UserService.query_user(email, password)
     if user:
+        # 登录成功
         response_data = user.to_json()
         user.access_token = get_uuid()
         login_user(user)
         user.update_time = (current_timestamp(),)
         user.update_date = (datetime_format(datetime.now()),)
         user.save()
-        msg = "Welcome back!"
+        msg = "欢迎回来！"
         return construct_response(data=response_data, auth=user.get_id(), message=msg)
     else:
         return get_json_result(
             data=False,
             code=settings.RetCode.AUTHENTICATION_ERROR,
-            message="Email and password do not match!",
+            message="邮箱和密码不匹配，请重新输入！",
         )
 
 
 @manager.route("/login/channels", methods=["GET"])  # noqa: F821
 def get_login_channels():
     """
-    Get all supported authentication channels.
+    获取所有支持的登录方式（认证渠道）
     """
     try:
         channels = []
@@ -453,19 +412,6 @@ def user_info_from_github(access_token):
 @manager.route("/logout", methods=["GET"])  # noqa: F821
 @login_required
 def log_out():
-    """
-    User logout endpoint.
-    ---
-    tags:
-      - User
-    security:
-      - ApiKeyAuth: []
-    responses:
-      200:
-        description: Logout successful.
-        schema:
-          type: object
-    """
     current_user.access_token = f"INVALID_{secrets.token_hex(16)}"
     current_user.save()
     logout_user()
@@ -475,33 +421,6 @@ def log_out():
 @manager.route("/setting", methods=["POST"])  # noqa: F821
 @login_required
 def setting_user():
-    """
-    Update user settings.
-    ---
-    tags:
-      - User
-    security:
-      - ApiKeyAuth: []
-    parameters:
-      - in: body
-        name: body
-        description: User settings to update.
-        required: true
-        schema:
-          type: object
-          properties:
-            nickname:
-              type: string
-              description: New nickname.
-            email:
-              type: string
-              description: New email.
-    responses:
-      200:
-        description: Settings updated successfully.
-        schema:
-          type: object
-    """
     update_dict = {}
     request_data = request.json
     if request_data.get("password"):

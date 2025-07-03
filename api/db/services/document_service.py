@@ -73,6 +73,7 @@ class DocumentService(CommonService):
     @DB.connection_context()
     def get_by_kb_id(cls, kb_id, page_number, items_per_page,
                      orderby, desc, keywords, run_status, types):
+        # 关键词查询 + kb_id 过滤
         if keywords:
             docs = cls.model.select().where(
                 (cls.model.kb_id == kb_id),
@@ -80,22 +81,23 @@ class DocumentService(CommonService):
             )
         else:
             docs = cls.model.select().where(cls.model.kb_id == kb_id)
-
+        # 状态过滤（run_status）
         if run_status:
             docs = docs.where(cls.model.run.in_(run_status))
+        # 类型过滤（文件类型）
         if types:
             docs = docs.where(cls.model.type.in_(types))
-
+        # 总数统计
         count = docs.count()
+        # 排序处理
         if desc:
             docs = docs.order_by(cls.model.getter_by(orderby).desc())
         else:
             docs = docs.order_by(cls.model.getter_by(orderby).asc())
-
-
+        # 分页处理
         if page_number and items_per_page:
             docs = docs.paginate(page_number, items_per_page)
-
+        # print(f"关键词查询: {docs}")
         return list(docs.dicts()), count
 
     @classmethod

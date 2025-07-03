@@ -157,6 +157,7 @@ def create():
     req["name"] = req["name"].strip()
 
     try:
+        # 检查知识库和文档名称是否冲突
         e, kb = KnowledgebaseService.get_by_id(kb_id)
         if not e:
             return get_data_error_result(message="Can't find this knowledgebase!")
@@ -185,16 +186,19 @@ def create():
 @manager.route("/list", methods=["POST"])  # noqa: F821
 @login_required
 def list_docs():
+    # 验证 kb_id（知识库 ID）
     kb_id = request.args.get("kb_id")
     if not kb_id:
         return get_json_result(data=False, message='Lack of "KB ID"', code=settings.RetCode.ARGUMENT_ERROR)
+    # 校验当前用户是否有该知识库权限。先查询当前用户属于哪些租户，再检查是否有租户拥有该知识库
     tenants = UserTenantService.query(user_id=current_user.id)
     for tenant in tenants:
         if KnowledgebaseService.query(tenant_id=tenant.tenant_id, id=kb_id):
             break
     else:
         return get_json_result(data=False, message="Only owner of knowledgebase authorized for this operation.", code=settings.RetCode.OPERATING_ERROR)
-    keywords = request.args.get("keywords", "")
+    # 解析请求参数：分页、排序、关键字
+    keywords = request.args.get("keywords", "") # 用于模糊搜索的关键词
 
     page_number = int(request.args.get("page", 0))
     items_per_page = int(request.args.get("page_size", 0))
@@ -204,14 +208,14 @@ def list_docs():
     else:
         desc = True
 
+    # 从请求体中获取过滤条件（POST 的 JSON body）
     req = request.get_json()
-
     run_status = req.get("run_status", [])
     if run_status:
         invalid_status = {s for s in run_status if s not in VALID_TASK_STATUS}
         if invalid_status:
             return get_data_error_result(message=f"Invalid filter run status conditions: {', '.join(invalid_status)}")
-
+    # 校验其是否在 VALID_TASK_STATUS 白名单中。
     types = req.get("types", [])
     if types:
         invalid_types = {t for t in types if t not in VALID_FILE_TYPES}
@@ -219,8 +223,9 @@ def list_docs():
             return get_data_error_result(message=f"Invalid filter conditions: {', '.join(invalid_types)} type{'s' if len(invalid_types) > 1 else ''}")
 
     try:
+        # 查询文档 + 返回
         docs, tol = DocumentService.get_by_kb_id(kb_id, page_number, items_per_page, orderby, desc, keywords, run_status, types)
-
+        # 处理缩略图路径
         for doc_item in docs:
             if doc_item["thumbnail"] and not doc_item["thumbnail"].startswith(IMG_BASE64_PREFIX):
                 doc_item["thumbnail"] = f"/v1/document/image/{kb_id}-{doc_item['thumbnail']}"
