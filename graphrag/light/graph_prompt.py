@@ -1,4 +1,3 @@
-# Licensed under the MIT License
 """
 Reference:
  - [LightRAG](https://github.com/HKUDS/LightRAG/blob/main/lightrag/prompt.py)

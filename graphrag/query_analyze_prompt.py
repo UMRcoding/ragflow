@@ -1,4 +1,3 @@
-# Licensed under the MIT License
 """
 Reference:
  - [LightRag](https://github.com/HKUDS/LightRAG)

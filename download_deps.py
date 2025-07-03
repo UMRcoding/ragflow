@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 
 # PEP 723 metadata
 # /// script

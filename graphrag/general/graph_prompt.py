@@ -1,5 +1,3 @@
-# Copyright (c) 2024 Microsoft Corporation.
-# Licensed under the MIT License
 """
 Reference:
  - [GraphRAG](https://github.com/microsoft/graphrag/blob/main/graphrag/prompts/index/extract_graph.py)
